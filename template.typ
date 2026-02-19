@@ -10,6 +10,7 @@
   student-id: "",
   mentor: "",
   date: datetime.today().display("[year]年[month]月[day]日"),
+  gutter: false,
   body,
 ) = {
   set document(title: title, author: author)
@@ -22,7 +23,11 @@
 
   set page(
     paper: "a4",
-    margin: (inside: 30mm, outside: 20mm, top: 30mm, bottom: 30mm),
+    margin: if gutter { 
+      (inside: 30mm, outside: 20mm, top: 30mm, bottom: 30mm) 
+    } else {
+      (inside: 25mm, outside: 25mm, top: 30mm, bottom: 30mm) 
+    } ,
     numbering: "1",
   )
 
@@ -126,6 +131,39 @@
     leading: 1em,
     justify: true,
   )
+show outline.entry: it => {
+    // ページ番号などのリンクを有効にするため全体をまとめます
+
+    let content = {
+      if it.level == 1 {
+        // --- 第1章 レベルの設定 ---
+        v(2em, weak: true) // 章ごとの余白
+        if (it.prefix() != none) {
+          strong([
+            第 #it.prefix() 章
+            #h(1em) // 章番号とタイトルの間の空白
+            #it.element.body
+          ])
+        } else {
+          strong([#it.element.body])
+        }
+        box(width: 1fr, repeat[ ]) 
+        strong(it.page())
+      } else if it.level == 2 {
+        par(first-line-indent: 0pt, spacing: 0.7em)[
+          #h(2em * (it.level - 1)) 
+          #it.prefix()
+          #h(1.8em) 
+          #it.element.body
+          #box(width: 1fr, repeat(gap: 0.8em)[ . ],) 
+          #it.page()
+        ]
+      }
+    }
+    
+    // リンク機能を維持して出力
+    link(it.element.location(), content)
+  }
   outline(title: none, indent: auto)
   pagebreak()
 
@@ -136,13 +174,17 @@
     spacing: 0.8em,
     justify: true,
   )
-  set page(numbering: "-1-")
+  set page(numbering: "1",
+    footer: context align(center)[
+      #text(font: font-mincho, size: 10pt)[\- #counter(page).display("1") -]
+    ]
+  )
   counter(page).update(1)
 
   body
 
   show bibliography: it => {
-    set heading(numbering: "1.1")
+    set heading(numbering: none)
     it
   }
 }
